@@ -351,11 +351,6 @@
 					}
 				});
 			});
-		}else{
-			$('.cell-container').click(function(){
-				var choosen = parseInt($(this).html());
-				click_board(choosen);
-			});
 		}
 	}
 

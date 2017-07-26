@@ -5,8 +5,82 @@ if(isset($_GET['request'])):
 	
 	switch($_GET['request']):
 		case 'sync':
+			$user_id = $_POST['user_id'];
+			$server_id = $_POST['server_id'];
+			$board = json_decode($_POST['board'])[0];
+
 			$file = 'sync.json';
-			$json = file_get_contents($file);
+			$sync = file_get_contents($file);
+			$sync = json_decode($sync);
+			
+			//Converting board[1..25] to 2-D matrix num_list
+			$num_list = [];
+			$k = 0;
+			for($i=0;$i<5;$i++){
+				$row = [];
+				for($j=0;$j<5;$j++){
+					$x = $board[$k]->checked;
+					$k++;
+					array_push($row, $x);
+				}
+				array_push($num_list, $row);
+			}
+
+			//print_r($board);
+			//print_r($num_list);
+			$score = 0;
+
+			//Checking for crossed rows, columns and diagonals
+			$sum = 0;
+			for($i=0;$i<5;$i++)
+				for($j=0;$j<5;$j++)
+					if($i == $j && $num_list[$i][$j] == 1)
+						$sum++;
+		
+			if($sum == 5)
+				$score++;
+			
+			$sum = 0;
+			for($i=0;$i<5;$i++)
+				for($j=0;$j<5;$j++)
+					if(($i+$j+1)==5 && $num_list[$i][$j] == 1)
+						$sum++;
+
+			if($sum == 5)
+				$score++;
+			
+			for($i=0;$i<5;$i++){
+				$sum = 0;
+				for($j=0;$j<5;$j++){
+					if($num_list[$i][$j] == 1)
+						$sum++;
+				}
+				if($sum == 5)
+					$score++;
+				$sum = 0;
+			}
+
+			for($i=0;$i<5;$i++){
+				$sum = 0;
+				for($j=0;$j<5;$j++){
+					if($num_list[$j][$i] == 1)
+						$sum++;
+				}
+				if($sum == 5)
+					$score++;
+				$sum = 0;
+			}
+
+			if($score >= 5){
+				$sync->winner = $user_id;
+				$fhandle = fopen($file, 'w') or die('Cannot open the file.');
+				$str = json_encode($sync);
+				fwrite($fhandle, $str);
+				fclose($fhandle);
+			}
+			$sync->score = $score;
+			
+			$json = $sync;
 		break;
 		case 'myturn':
 			$user_id = $_POST['user_id'];
@@ -60,10 +134,21 @@ if(isset($_GET['request'])):
 		case 'winner':
 			$user_id = $_POST['user_id'];
 			$server_id = $_POST['server_id'];
-			$board = $_POST['board'];
+			
+			
+			$file = 'sync.json';
+			$sync = file_get_contents($file);
+			$sync = json_decode($sync);
+
+			//print_r($sync);
+
+			if($sync->winner == $user_id)
+				$json = true;
+			else
+				$json = false;
 		break;
 	endswitch;
 endif;
 
-header('Content-type: application/json');
+//header('Content-type: application/json');
 echo json_encode( $json );

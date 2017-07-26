@@ -217,7 +217,7 @@
 			<div class='container' id='board-container'>
 				
 			<?php
-				echo '<table>';
+				echo '<table id="board">';
 				for($i=0;$i<5;$i++){
 				    echo '<tr>';
 				        for($j=0;$j<5;$j++){                    
@@ -272,10 +272,10 @@
 	function update_banner(){
 		for(var i=1;i<=score;i++)
 			$('#B'+i).addClass('win');
-		if(score != 5)
-			$('#bingo-holder').click(false);
-		else
+		if(score >= 5)
 			$('#bingo-holder').click(true);
+		else
+			$('#bingo-holder').click(false);
 	}
 
 	function declare_winner(winner){
@@ -287,22 +287,38 @@
 		$user_id = <?php echo $user_id; ?>;
 		$server_id = <?php echo $server_id; ?>;
 		
-		var data = $.ajax({
+		var num_list = new Array();
+
+		$('#board').each(function () {
+			var innerArray = [];
+
+			$(this).find('td').each(function () {
+				var x = {};
+				x.value = parseInt($(this).text());
+				x.checked = parseInt($(this).data('checked'));
+				innerArray.push(x);
+			});
+
+			num_list.push(innerArray);
+		});
+		
+		$.ajax({
 			type: 'post',
 			url: 'process.php?request=sync',
-			data: {user_id:$user_id, server_id : $server_id},
+			data: {
+				user_id:$user_id, 
+				server_id : $server_id,
+				board : JSON.stringify(num_list)
+			},
 			dataType: 'json',
 			success:function(response, textStatus, jqXHR) {
-				var data = JSON.parse(response);
-				//console.log(data);
-				if(data.winner == 0){
-					live(data);
-					$('#current-number').html(data.current);
-					score = data.score;
-					update_board(data.current);
-					update_banner();
-				}else
-					declare_winner(data.winner);
+				//console.log(response);
+				var data = response;
+				live(data);
+				$('#current-number').html(data.current);
+				score = data.score;
+				update_board(data.current);
+				update_banner();
 			},
 			error: function(jqXHR, textStatus, errorThrown){
 				console.log(textStatus, errorThrown);
@@ -343,7 +359,7 @@
 					cache: false,
 					dataType: 'json',
 					success:function(response, textStatus, jqXHR) {
-						console.log(response);
+						//console.log(response);
 						click_board(response.current);
 					},
 					error: function(jqXHR, textStatus, errorThrown){
@@ -363,29 +379,19 @@
 		$user_id = <?php echo $user_id; ?>;
 		$server_id = <?php echo $server_id; ?>;
 
-		num_list = [];
-
-		for(var i=1;i<=25;i++){
-			x = {};
-			x.value = i;
-			x.checked = parseInt($('#'+i).data('checked'));
-			num_list.push(x);
-		}
-
-		//console.log(num_list);
-
 		$.ajax({
 			type: 'POST',
 			url: 'process.php?request=winner',
 			data: {
 				user_id : $user_id,
-				server_id : $server_id,
-				board : JSON.stringify(num_list)
+				server_id : $server_id
 			},
 			cache: false,
 			dataType: 'json',
 			success:function(response, textStatus, jqXHR) {
-				console.log(response);
+				//console.log(response);
+				if(response == true)
+					alert('You win.');
 			},
 			error: function(jqXHR, textStatus, errorThrown){
 				console.log(textStatus, errorThrown);
@@ -398,6 +404,6 @@
 		claim_win();
 	});
 		
-	setInterval(function(){ syncJSON(); }, 200);
+	setInterval(function(){ syncJSON(); }, 500);
 
 </script>

@@ -129,10 +129,13 @@
 			height:59px;
 			border:2px solid #ffee;
 			border-radius:5px 5px 5px 5px;
-			background-color:  #DAF7A6 
-; /*#FFC300 ;*/
+			background-color:  #DAF7A6;
 			color: #68695d ;
 			font-size:20px;
+		}
+
+		.cell-clicked{
+			background-color: #FFC300 ;
 		}
 		
 		.cell-focus{
@@ -193,11 +196,11 @@
 			
 			<div id='bingo-holder'>
 				<p id='bingo'>
-					<span id='B'>B</span>
-					<span id='I'>I</span>
-					<span id='N'>N</span>
-					<span id='G'>G</span>
-					<span id='O'>O</span>
+					<span id='B1'>B</span>
+					<span id='B2'>I</span>
+					<span id='B3'>N</span>
+					<span id='B4'>G</span>
+					<span id='B5'>O</span>
 				</p>
 			</div>
 			
@@ -218,7 +221,7 @@
 				for($i=0;$i<5;$i++){
 				    echo '<tr>';
 				        for($j=0;$j<5;$j++){                    
-				            echo '<td class="cell-container" value='.$num_list[$i][$j]['value'].'>'.$num_list[$i][$j]['value'].'</td>';
+				            echo '<td class="cell-container" id="'.$num_list[$i][$j]['value'].'" data-checked="'.$num_list[$i][$j]['checked'].'">'.$num_list[$i][$j]['value'].'</td>';
 				        }
 				    echo '</tr>';
 				}
@@ -245,6 +248,40 @@
 </body>
 
 <script>
+
+	var score = 0;
+
+	function update_board(x){
+		x = '#'+x;
+		$(x).click(true);
+		$(x).hover(function () {
+			$(this).addClass('cell-focus');
+		}, function(){
+			$(this).removeClass('cell-focus');
+		});
+	}
+
+	function click_board(x){
+		x = '#'+x;
+		$(x).click(false);
+		$(x).removeClass('cell-focus');
+		$(x).addClass('cell-clicked');
+		$(x).data('checked', '1');
+	}
+
+	function update_banner(){
+		for(var i=1;i<=score;i++)
+			$('#B'+i).addClass('win');
+		if(score != 5)
+			$('#bingo-holder').click(false);
+		else
+			$('#bingo-holder').click(true);
+	}
+
+	function declare_winner(winner){
+		console.log('winner is user id'+winner);
+		//function to destroy everything and take user back to server page
+	}
  	
 	function syncJSON(){
 		$user_id = <?php echo $user_id; ?>;
@@ -257,9 +294,15 @@
 			dataType: 'json',
 			success:function(response, textStatus, jqXHR) {
 				var data = JSON.parse(response);
-				console.log(data);
-				live(data);
-				$('#current-number').html(data.current);
+				//console.log(data);
+				if(data.winner == 0){
+					live(data);
+					$('#current-number').html(data.current);
+					score = data.score;
+					update_board(data.current);
+					update_banner();
+				}else
+					declare_winner(data.winner);
 			},
 			error: function(jqXHR, textStatus, errorThrown){
 				console.log(textStatus, errorThrown);
@@ -272,28 +315,12 @@
 		var choosen = 0;
  		var turn_id = data.turn_id;
  		
- 		
- 		/*var flag=0, score = data.score;
- 		
- 		for(var i = 0;i<score.length;i++)
- 			if(score[i].value == true){
- 				$('#'+score[i].name).addClass('win');
- 				flag++;
- 			}
- 		if(flag == 5){
- 			$('#bingo-holder').click(true, function(){
- 				alert('claim your prize');
- 			});
- 		}else
- 			$('#bingo-holder').click(false);
- 		*/
- 		
 		if(turn_id == <?php echo $user_id; ?>){
 			
-			$('.cell-container').click(true);
 			
 			$('.cell-container').hover(function () {
-				$(this).addClass('cell-focus');
+				if($(this).data('checked') == "0")
+					$(this).addClass('cell-focus');
 			}, function(){
 				$(this).removeClass('cell-focus');
 			});
@@ -317,18 +344,59 @@
 					dataType: 'json',
 					success:function(response, textStatus, jqXHR) {
 						console.log(response);
-						$('.cell-container').hover(function(){
-							$(this).removeClass('cell-focus');
-						});
-						$('.cell-container').click(false);
+						click_board(response.current);
 					},
 					error: function(jqXHR, textStatus, errorThrown){
-						alert(textStatus, errorThrown);
+						console.log(textStatus, errorThrown);
 					}
 				});
 			});
 		}
 	}
+
+	function claim_win(){
+		$user_id = <?php echo $user_id; ?>;
+		$server_id = <?php echo $server_id; ?>;
+
+		num_list = [];
+
+		for(var i=1;i<=25;i++){
+			x = {};
+			x.value = i;
+			x.checked = parseInt($('#'+i).data('checked'));
+			num_list.push(x);
+		}
+
+		//console.log(num_list);
+
+		$.ajax({
+			type: 'POST',
+			url: 'process.php?request=winner',
+			data: {
+				user_id : $user_id,
+				server_id : $server_id,
+				board : JSON.stringify(num_list)
+			},
+			cache: false,
+			dataType: 'json',
+			success:function(response, textStatus, jqXHR) {
+				console.log(response);
+			},
+			error: function(jqXHR, textStatus, errorThrown){
+				console.log(textStatus, errorThrown);
+			}
+		});
+
+	}
+
+	$('.cell-container').click(function(){
+		var choosen = parseInt($(this).html());
+		click_board(choosen);
+	});
+
+	$('#bingo-holder').click(function (){
+		claim_win();
+	});
 		
 	setInterval(function(){ syncJSON(); }, 200);
 

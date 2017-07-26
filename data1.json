@@ -3,7 +3,6 @@
 	"username": "User 1",
 	"server_id": 1,
 	"server_name": "Server 1",
-	"turn_id":1,
 	"score": [
 		{
 			"B":false

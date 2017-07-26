@@ -57,6 +57,11 @@ if(isset($_GET['request'])):
 			}else	
 				$json = '{"error":"Not your turn."}';
 		break;
+		case 'winner':
+			$user_id = $_POST['user_id'];
+			$server_id = $_POST['server_id'];
+			$board = $_POST['board'];
+		break;
 	endswitch;
 endif;
 

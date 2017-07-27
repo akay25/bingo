@@ -250,7 +250,6 @@
 <script>
 
 	var score = 0;
-
 	function update_board(x){
 		x = '#'+x;
 		$(x).click(true);
@@ -312,12 +311,13 @@
 			},
 			dataType: 'json',
 			success:function(response, textStatus, jqXHR) {
-				//console.log(response);
+				console.log(response);
 				var data = response;
 				live(data);
 				$('#current-number').html(data.current);
 				score = data.score;
-				update_board(data.current);
+				if($user_id != data.turn_id)
+					update_board(data.current);
 				update_banner();
 			},
 			error: function(jqXHR, textStatus, errorThrown){
@@ -332,7 +332,6 @@
  		var turn_id = data.turn_id;
  		
 		if(turn_id == <?php echo $user_id; ?>){
-			
 			
 			$('.cell-container').hover(function () {
 				if($(this).data('checked') == "0")

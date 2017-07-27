@@ -71,13 +71,22 @@ if(isset($_GET['request'])):
 				$sum = 0;
 			}
 
-			if($score >= 5){
+			if($score >= 5)
 				$sync->winner = $user_id;
-				$fhandle = fopen($file, 'w') or die('Cannot open the file.');
-				$str = json_encode($sync);
-				fwrite($fhandle, $str);
-				fclose($fhandle);
+			
+			if($sync->played == 1 && $sync->turn_id != $user_id){
+				$sync->turn_id++;
+				if($sync->turn_id > $sync->total)
+					$sync->turn_id = 1;
+				$sync->played = 0;
 			}
+
+			
+			$fhandle = fopen($file, 'w') or die('Cannot open the file.');
+			$str = json_encode($sync);
+			fwrite($fhandle, $str);
+			fclose($fhandle);
+			
 			$sync->score = $score;
 			
 			$json = $sync;
@@ -113,13 +122,10 @@ if(isset($_GET['request'])):
 					$str = json_encode($num_list);
 					fwrite($fhandle, $str);
 					fclose($fhandle);
-				
-				
-					$json->turn_id++;
-					if($json->turn_id > $json->total)
-						$json->turn_id = 1;
-					$json->current = $current;
 					
+					//Tell the database that player played his move
+					$json->played = 1;
+					$json->current = $current;
 
 					$fhandle = fopen($file, 'w') or die('Cannot open the file.');
 					$str = json_encode($json);

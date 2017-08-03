@@ -1,21 +1,52 @@
 <?php
 
-	$file = 'data'.$_GET['user'].'.json';
+	require_once('function.php');
+
+	if(isset($_SESSION['username'], $_SESSION['user_id']) && !empty($_SESSION['username']) && !empty($_SESSION['user_id'])){
+		$username = $_SESSION['username'];
+		$user_id = $_SESSION['user_id'];
+	}else
+		header('Location:./');
 	
-	$str = file_get_contents($file);
+	if(isset($_SESSION['server_name'], $_SESSION['server_id']) && !empty($_SESSION['server_name']) && !empty($_SESSION['server_id'])){
+		$server_name = $_SESSION['server_name'];
+		$server_id = $_SESSION['server_id'];
+		$creator = $_SESSION['creator'];
+	}else
+		header('Location:./');
+
+	$server = $db->select('server', 'user_list', "id=$server_id")[0];
 	
-	$json = json_decode($str, true);
 	
 	
-	$username = $json['username'];
-	$server_name = $json['server_name'];
+	//Get username
+	$user_list = explode(',', $server['user_list']);
 	
-	$user_id = $json['user_id'];
-	$server_id = $json['server_id'];
+	$list = [];
+	foreach($user_list as $user){
+		$usern = $db->select('users', 'username', "id = $user")[0]['username'];
+				
+		array_push($list, $usern);
+	}
 	
-	$num_list = $json['num_list'];
-	$user_list = $json['user_list'];
+	$user_list = $list;
 	
+	//Get 25 random values
+	$temp_list = array();
+
+        
+    for($i=1;$i<=25;$i++)
+    	array_push($temp_list, $i);
+
+    for($i=0;$i<5;$i++)
+        shuffle($temp_list);
+        
+	for($i=0, $k = 0;$i<5;$i++)
+        for($j=0;$j<5;$j++){
+            $x = array('value'=>$temp_list[$k++], 'checked'=>0);
+            $num_list[$i][$j] = $x;
+        }
+
 ?>
 
 <head>
@@ -238,7 +269,7 @@
 					<ul class='list-unstyled'>
 					<?php
 						foreach($user_list as $user)
-							echo '<li class="player">'.$user['username'].'</li>';	
+							echo '<li class="player">'.$user.'</li>';	
 					?>
 					</ul>
 				</div>
@@ -305,8 +336,6 @@
 			type: 'post',
 			url: 'process.php?request=sync',
 			data: {
-				user_id:$user_id, 
-				server_id : $server_id,
 				board : JSON.stringify(num_list)
 			},
 			dataType: 'json',
@@ -351,8 +380,6 @@
 					type: 'POST',
 					url: 'process.php?request=myturn',
 					data: {
-						user_id : $user_id,
-						server_id : $server_id,
 						current : choosen
 					},
 					cache: false,
